@@ -1,30 +1,6 @@
-import { Connection, clusterApiUrl } from '@solana/web3.js';
-
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
-
-    const WALLET_FINAL = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS";
-    const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
-
-    try {
-        const slot = await connection.getSlot();
-        const blockTime = await connection.getBlockTime(slot);
-        const performance = await connection.getRecentPerformanceSamples(1);
-        
-        return res.status(200).json({
-            success: true,
-            status: "REAL-TIME SCANNING",
-            slot: slot,
-            time: blockTime,
-            network_load: performance[0]?.numTransactions || "SCANNING",
-            details: `[!] FOUND GAP: ${(Math.random() * 0.09).toFixed(4)} SOL - Provádím operaci...`,
-            destination: WALLET_FINAL
-        });
-    } catch (err) {
-        return res.status(200).json({ 
-            success: false, 
-            status: "NETWORK_LATENCY", 
-            msg: "Síť je přetížená, zkouším jiný uzel..." 
-        });
-    }
+{
+  "dependencies": {
+    "@solana/web3.js": "latest",
+    "@neondatabase/serverless": "latest"
+  }
 }
