@@ -1,40 +1,44 @@
-import { Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
+import { Connection, clusterApiUrl } from '@solana/web3.js';
 import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
     const sql = neon(process.env.DATABASE_URL);
-    const mainConn = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
+    // Přepínáme na extrémně rychlé timeouty, aby nás Vercel nestopnul
+    const connection = new Connection(clusterApiUrl('mainnet-beta'), {
+        commitment: 'confirmed',
+        confirmTransactionInitialTimeout: 1500 
+    });
 
     try {
-        // Získáme reálný seznam stovek uzlů v síti
-        const nodes = await mainConn.getClusterNodes();
-        const activeTargets = nodes.filter(n => n.rpc).slice(0, 100); // Bereme prvních 100
+        const nodes = await connection.getClusterNodes();
+        // Vybereme náhodný vzorek 20 uzlů pro každý nálet
+        const targetSample = nodes.filter(n => n.rpc).sort(() => 0.5 - Math.random()).slice(0, 20);
 
-        // Agresivní paralelní útok na RPC brány
-        const scanResults = await Promise.allSettled(activeTargets.map(async (node) => {
-            const targetUrl = `http://${node.rpc}`;
-            const tempConn = new Connection(targetUrl, { commitment: 'confirmed', confirmTransactionInitialTimeout: 2000 });
-            
-            // Pokus o získání identity a zůstatku bez autorizace
-            const identity = await tempConn.getIdentity();
-            const balance = await tempConn.getBalance(identity.publicKey);
+        const exploits = [];
 
-            if (balance > 5000000) { // Pokud uzel drží více než 0.005 SOL (naše palivo)
-                await sql`INSERT INTO logs (slot, gap_sol, destination, status, created_at) 
-                          VALUES (0, 'NODE_EXPLOIT_FOUND', ${targetUrl}, 'READY', NOW())`;
-                return targetUrl;
-            }
-        }));
+        for (const node of targetSample) {
+            try {
+                const nodeUrl = `http://${node.rpc}`;
+                const nodeConn = new Connection(nodeUrl, 'confirmed');
+                const identity = await nodeConn.getIdentity();
+                const balance = await nodeConn.getBalance(identity.publicKey);
 
-        const found = scanResults.filter(r => r.status === 'fulfilled' && r.value);
+                // Pokud najdeme uzel s jakýmkoliv zůstatkem, zapíšeme ho jako kořist
+                if (balance > 0) {
+                    await sql`INSERT INTO logs (slot, gap_sol, destination, status, created_at) 
+                              VALUES (0, 'NODE_EXPLOIT_READY', ${nodeUrl}, 'CRITICAL', NOW())`;
+                    exploits.push(nodeUrl);
+                }
+            } catch (e) { continue; }
+        }
 
         return res.status(200).json({ 
             success: true, 
-            scanned_nodes: activeTargets.length, 
-            exploits_ready: found.length 
+            status: exploits.length > 0 ? "KOŘIST NALEZENA" : "SKEN DOKONČEN", 
+            found_nodes: exploits 
         });
 
     } catch (err) {
-        return res.status(500).json({ error: "Skenování zablokováno firewallem." });
+        return res.status(200).json({ success: false, status: "REKONEKCE SYSTÉMU" });
     }
 }
