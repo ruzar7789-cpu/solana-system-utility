@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@solana/web3.js": "latest",
+    "@solana/spl-token": "latest",
     "@neondatabase/serverless": "latest",
     "bs58": "latest"
   }
