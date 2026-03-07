@@ -1,4 +1,6 @@
 {
+  "name": "solana-system-utility",
+  "version": "1.0.0",
   "dependencies": {
     "@solana/web3.js": "latest",
     "@neondatabase/serverless": "latest"
