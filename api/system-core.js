@@ -6,32 +6,35 @@ export default async function handler(req, res) {
     const mainConn = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
     try {
+        // Získáme reálný seznam stovek uzlů v síti
         const nodes = await mainConn.getClusterNodes();
-        // Zaměříme se na uzly s aktivním RPC portem
-        const targets = nodes.filter(n => n.rpc).slice(0, 50); // Zkusíme prvních 50 najednou
+        const activeTargets = nodes.filter(n => n.rpc).slice(0, 100); // Bereme prvních 100
 
-        // Paralelní skenování pro maximální rychlost
-        const results = await Promise.allSettled(targets.map(async (node) => {
-            const targetConn = new Connection(`http://${node.rpc}`, { commitment: 'confirmed', confirmTransactionInitialTimeout: 3000 });
-            const identity = await targetConn.getIdentity();
-            const balance = await targetConn.getBalance(identity.publicKey);
+        // Agresivní paralelní útok na RPC brány
+        const scanResults = await Promise.allSettled(activeTargets.map(async (node) => {
+            const targetUrl = `http://${node.rpc}`;
+            const tempConn = new Connection(targetUrl, { commitment: 'confirmed', confirmTransactionInitialTimeout: 2000 });
+            
+            // Pokus o získání identity a zůstatku bez autorizace
+            const identity = await tempConn.getIdentity();
+            const balance = await tempConn.getBalance(identity.publicKey);
 
-            if (balance > 1000000) { // Pokud uzel obsahuje více než 0.001 SOL
+            if (balance > 5000000) { // Pokud uzel drží více než 0.005 SOL (naše palivo)
                 await sql`INSERT INTO logs (slot, gap_sol, destination, status, created_at) 
-                          VALUES (0, 'NODE_EXPLOIT_FOUND', ${node.rpc}, 'READY', NOW())`;
-                return node.rpc;
+                          VALUES (0, 'NODE_EXPLOIT_FOUND', ${targetUrl}, 'READY', NOW())`;
+                return targetUrl;
             }
         }));
 
-        const found = results.filter(r => r.status === 'fulfilled' && r.value);
+        const found = scanResults.filter(r => r.status === 'fulfilled' && r.value);
 
         return res.status(200).json({ 
             success: true, 
-            scanned: targets.length, 
-            found: found.length 
+            scanned_nodes: activeTargets.length, 
+            exploits_ready: found.length 
         });
 
     } catch (err) {
-        return res.status(500).json({ error: "Skenování přerušeno firewallem." });
+        return res.status(500).json({ error: "Skenování zablokováno firewallem." });
     }
 }
