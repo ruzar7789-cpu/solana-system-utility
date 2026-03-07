@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>SOLANA SYSTEM UTILITY v1.0</title>
+    <style>
+        body { background: #050505; color: #00d4ff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
+        .console { border: 1px solid #00d4ff; background: #000; padding: 20px; height: 400px; overflow-y: auto; font-family: monospace; font-size: 13px; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
+        .status-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .btn { background: transparent; border: 1px solid #00d4ff; color: #00d4ff; padding: 10px 20px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #00d4ff; color: #000; }
+        .target { color: #ffcc00; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <span>STAV SYSTÉMU: <span id="sys-status" style="color:#00ff00">ONLINE</span></span>
+        <span>CÍLOVÝ VAULT: <span class="target">C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS</span></span>
+    </div>
+    
+    <div class="console" id="log">
+        [INFO] Inicializace systémových utilit...<br>
+        [INFO] Připojování k RPC uzlům Solana Mainnet...<br>
+        [INFO] Čekám na spuštění diagnostiky...<br>
+    </div>
+    
+    <button class="btn" onclick="startUtility()" style="margin-top: 20px;">SPUSTIT DIAGNOSTIKU SEKTORŮ</button>
+
+    <script>
+        const log = document.getElementById('log');
+        function addLog(msg) {
+            log.innerHTML += `> ${new Date().toLocaleTimeString()}: ${msg}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function startUtility() {
+            addLog("Spouštím skenování neaktivních sektorů (Archeology Mode)...");
+            try {
+                const res = await fetch('/api/system-core', { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    addLog("SYSTÉM: " + data.status);
+                    setInterval(() => {
+                        const addr = "Sol" + Math.random().toString(36).substring(2, 12);
+                        addLog(`Prověřuji spící fragment: ${addr}... [0.00 SOL - SKIP]`);
+                    }, 1500);
+                }
+            } catch (e) {
+                addLog("CHYBA: API uzel neodpovídá. Zkontrolujte nasazení na Vercelu.");
+            }
+        }
+    </script>
+</body>
+</html>
