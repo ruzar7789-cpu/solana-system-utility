@@ -12,58 +12,57 @@
         .target { color: #00ff00; text-shadow: 0 0 5px rgba(0,255,0,0.5); }
         .found { color: #00ff00; font-weight: bold; background: rgba(0,255,0,0.1); }
         .scanning { color: #ffcc00; }
-        .protocol { color: #ff00ff; }
+        .solscan-link { color: #ff00ff; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="status-bar">
-        <span>MODE: <span id="sys-status" style="color:#ffcc00">FLASH_LOAN_ACTIVE</span></span>
-        <span>VAULT: <span class="target">C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS</span></span>
+        <span>MODE: <span id="sys-status" style="color:#00ff00">DEVNET_LIVE_TRADING</span></span>
+        <span>VAULT: <span class="target">C1Nf...PaNS</span></span>
     </div>
     
     <div class="console" id="log">
         [SYS] Matrix Arbitrage Engine inicializován...<br>
-        [SYS] Protokoly: RAYDIUM, JUPITER, ORCA načteny...<br>
-        [SYS] Čekám na příkaz k lovu bez investic...<br>
+        [SYS] Síť: SOLANA DEVNET (Kredit Aktivní)<br>
+        [SYS] Čekám na příkaz k lovu...<br>
     </div>
     
-    <button class="btn" onclick="startHackerMode()" style="margin-top: 20px;">SPUSTIT ARBITRÁŽNÍ SKENER</button>
+    <button id="start-btn" class="btn" onclick="startHackerMode()" style="margin-top: 20px;">SPUSTIT ARBITRÁŽNÍ SKENER</button>
 
     <script>
         const log = document.getElementById('log');
         const protocols = ['RAYDIUM', 'JUPITER', 'ORCA', 'SERUM'];
 
         function addLog(msg, type = '') {
-            const span = document.createElement('span');
-            if(type) span.className = type;
-            span.innerHTML = `> ${new Date().toLocaleTimeString()} | ${msg}<br>`;
-            log.appendChild(span);
+            const div = document.createElement('div');
+            if(type) div.className = type;
+            div.innerHTML = `> ${new Date().toLocaleTimeString()} | ${msg}`;
+            log.appendChild(div);
             log.scrollTop = log.scrollHeight;
         }
 
         async function startHackerMode() {
-            addLog("AKTIVUJI FLASH LOAN ENGINE...", "found");
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('start-btn').style.opacity = "0.5";
+            addLog("AKTIVUJI JUPITER AGGREGATOR ENGINE...", "found");
             
-            // Interval pro vizuální skenování (aby to v terminálu žilo)
+            // Interval nastaven na 5 sekund, aby se nepropálil kredit hned
             setInterval(async () => {
                 const protocol = protocols[Math.floor(Math.random() * protocols.length)];
                 
                 try {
-                    // Voláme tvoji novou API fintu
                     const res = await fetch('/api/system-core', { method: 'POST' });
                     const data = await res.json();
                     
                     if(data.success) {
-                        if(data.details.includes('FOUND GAP')) {
-                            addLog(`[!] ${data.details}`, "found");
-                        } else {
-                            addLog(`[SCAN] ${protocol} | Mezera: ${(Math.random() * 0.03).toFixed(5)} SOL | STATUS: ČISTÝ`, "scanning");
-                        }
+                        addLog(`[!] OBCHOD PROVEDEN! Signature: <a href="https://solscan.io/tx/${data.signature}?cluster=devnet" target="_blank" class="solscan-link">${data.signature.substring(0,10)}...</a>`, "found");
+                    } else {
+                        addLog(`[SCAN] ${protocol} | Hledám mezeru... | Status: ${data.error || 'Čistý'}`, "scanning");
                     }
                 } catch (e) {
                     addLog("SPOJENÍ PŘERUŠENO - REKONEKCE...", "scanning");
                 }
-            }, 1200);
+            }, 5000);
         }
     </script>
 </body>
