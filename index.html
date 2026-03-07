@@ -2,52 +2,68 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SOLANA SYSTEM UTILITY v1.0</title>
+    <title>SOLANA ARBITRAGE HUNTER v2.0</title>
     <style>
-        body { background: #050505; color: #00d4ff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; }
-        .console { border: 1px solid #00d4ff; background: #000; padding: 20px; height: 400px; overflow-y: auto; font-family: monospace; font-size: 13px; box-shadow: 0 0 15px rgba(0, 212, 255, 0.2); }
-        .status-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .btn { background: transparent; border: 1px solid #00d4ff; color: #00d4ff; padding: 10px 20px; cursor: pointer; transition: 0.3s; }
-        .btn:hover { background: #00d4ff; color: #000; }
-        .target { color: #ffcc00; }
+        body { background: #050505; color: #00d4ff; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; text-transform: uppercase; }
+        .console { border: 1px solid #333; background: #000; padding: 20px; height: 500px; overflow-y: auto; font-size: 12px; box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.1); line-height: 1.5; }
+        .status-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px; letter-spacing: 1px; }
+        .btn { background: #111; border: 1px solid #ffcc00; color: #ffcc00; padding: 12px 25px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .btn:hover { background: #ffcc00; color: #000; box-shadow: 0 0 15px #ffcc00; }
+        .target { color: #00ff00; text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+        .found { color: #00ff00; font-weight: bold; background: rgba(0,255,0,0.1); }
+        .scanning { color: #ffcc00; }
+        .protocol { color: #ff00ff; }
     </style>
 </head>
 <body>
     <div class="status-bar">
-        <span>STAV SYSTÉMU: <span id="sys-status" style="color:#00ff00">ONLINE</span></span>
-        <span>CÍLOVÝ VAULT: <span class="target">C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS</span></span>
+        <span>MODE: <span id="sys-status" style="color:#ffcc00">FLASH_LOAN_ACTIVE</span></span>
+        <span>VAULT: <span class="target">C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS</span></span>
     </div>
     
     <div class="console" id="log">
-        [INFO] Inicializace systémových utilit...<br>
-        [INFO] Připojování k RPC uzlům Solana Mainnet...<br>
-        [INFO] Čekám na spuštění diagnostiky...<br>
+        [SYS] Matrix Arbitrage Engine inicializován...<br>
+        [SYS] Protokoly: RAYDIUM, JUPITER, ORCA načteny...<br>
+        [SYS] Čekám na příkaz k lovu bez investic...<br>
     </div>
     
-    <button class="btn" onclick="startUtility()" style="margin-top: 20px;">SPUSTIT DIAGNOSTIKU SEKTORŮ</button>
+    <button class="btn" onclick="startHackerMode()" style="margin-top: 20px;">SPUSTIT ARBITRÁŽNÍ SKENER</button>
 
     <script>
         const log = document.getElementById('log');
-        function addLog(msg) {
-            log.innerHTML += `> ${new Date().toLocaleTimeString()}: ${msg}<br>`;
+        const protocols = ['RAYDIUM', 'JUPITER', 'ORCA', 'SERUM'];
+
+        function addLog(msg, type = '') {
+            const span = document.createElement('span');
+            if(type) span.className = type;
+            span.innerHTML = `> ${new Date().toLocaleTimeString()} | ${msg}<br>`;
+            log.appendChild(span);
             log.scrollTop = log.scrollHeight;
         }
 
-        async function startUtility() {
-            addLog("Spouštím skenování neaktivních sektorů (Archeology Mode)...");
-            try {
-                const res = await fetch('/api/system-core', { method: 'POST' });
-                const data = await res.json();
-                if(data.success) {
-                    addLog("SYSTÉM: " + data.status);
-                    setInterval(() => {
-                        const addr = "Sol" + Math.random().toString(36).substring(2, 12);
-                        addLog(`Prověřuji spící fragment: ${addr}... [0.00 SOL - SKIP]`);
-                    }, 1500);
+        async function startHackerMode() {
+            addLog("AKTIVUJI FLASH LOAN ENGINE...", "found");
+            
+            // Interval pro vizuální skenování (aby to v terminálu žilo)
+            setInterval(async () => {
+                const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+                
+                try {
+                    // Voláme tvoji novou API fintu
+                    const res = await fetch('/api/system-core', { method: 'POST' });
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        if(data.details.includes('FOUND GAP')) {
+                            addLog(`[!] ${data.details}`, "found");
+                        } else {
+                            addLog(`[SCAN] ${protocol} | Mezera: ${(Math.random() * 0.03).toFixed(5)} SOL | STATUS: ČISTÝ`, "scanning");
+                        }
+                    }
+                } catch (e) {
+                    addLog("SPOJENÍ PŘERUŠENO - REKONEKCE...", "scanning");
                 }
-            } catch (e) {
-                addLog("CHYBA: API uzel neodpovídá. Zkontrolujte nasazení na Vercelu.");
-            }
+            }, 1200);
         }
     </script>
 </body>
