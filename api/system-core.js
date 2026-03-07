@@ -1,73 +1,73 @@
-import { Connection, clusterApiUrl, Keypair, VersionedTransaction } from '@solana/web3.js';
+import { Connection, clusterApiUrl, Keypair, Transaction, PublicKey } from '@solana/web3.js';
+import { createCloseAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { neon } from '@neondatabase/serverless';
 import bs58 from 'bs58';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
 
-    // Připojení k DB (Neon) a Solaně (DEVNET pro testování zdarma)
     const sql = neon("postgresql://neondb_owner:npg_cVA3ayLX8vPH@ep-curly-voice-agsdk9sy-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require");
-    const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+    // Přepnuto na MAINNET, protože tam jsou ty reálné zapomenuté peníze (Rent)
+    const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
     try {
-        // 1. Načtení tvého klíče z Vercel Environment Variables
         const secretKeyString = process.env.SOLANA_PRIVATE_KEY;
-        if (!secretKeyString) throw new Error("Klíč nenalezen ve Vercelu!");
+        if (!secretKeyString) throw new Error("Klíč nenalezen!");
         const payer = Keypair.fromSecretKey(bs58.decode(secretKeyString));
 
-        // 2. ZEPTÁME SE JUPITERA NA OBCHOD (Výměna 0.1 SOL za USDC na Devnetu)
-        // Používáme testovací tokeny pro Devnet
-        const quoteResponse = await (
-            await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=100000000&slippageBps=50`)
-        ).json();
+        addLog("Skenuji síť pro zapomenuté SOL (Rent)...");
 
-        if (!quoteResponse || quoteResponse.error) {
-            throw new Error("Jupiter nenašel cestu pro obchod: " + (quoteResponse.error || "Neznámá chyba"));
-        }
-
-        // 3. VYTVOŘENÍ SWAP TRANSAKCE
-        const { swapTransaction } = await (
-            await fetch('https://quote-api.jup.ag/v6/swap', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    quoteResponse,
-                    userPublicKey: payer.publicKey.toString(),
-                    wrapAndUnwrapSol: true,
-                })
-            })
-        ).json();
-
-        // 4. PODPIS TVÝM KLÍČEM
-        const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
-        var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-        transaction.sign([payer]);
-
-        // 5. ODESLÁNÍ DO BLOCKCHAINU
-        const signature = await connection.sendRawTransaction(transaction.serialize(), {
-            skipPreflight: true,
-            maxRetries: 2
+        // 1. NAJDEME VŠECHNY TOKEN ÚČTY, KTERÉ TI PATŘÍ
+        const tokenAccounts = await connection.getTokenAccountsByOwner(payer.publicKey, {
+            programId: TOKEN_PROGRAM_ID,
         });
 
-        // 6. ZÁPIS DO NEONU (Teď už jako EXECUTED obchod)
-        const slot = await connection.getSlot();
+        let recoveredTotal = 0;
+        let signatures = [];
+
+        // 2. PROJDEME ÚČTY A HLEDÁME TY PRÁZDNÉ
+        for (const account of tokenAccounts.value) {
+            const accountInfo = await connection.getTokenAccountBalance(account.pubkey);
+            
+            // FINTA: Pokud je na účtu nula, můžeme ho zavřít a vzít si zálohu (Rent)
+            if (accountInfo.value.uiAmount === 0) {
+                const transaction = new Transaction().add(
+                    createCloseAccountInstruction(
+                        account.pubkey,      // Účet, co zavíráme
+                        payer.publicKey,    // Kam půjdou ty peníze (k tobě!)
+                        payer.publicKey     // Kdo to podepisuje (ty)
+                    )
+                );
+
+                const signature = await connection.sendTransaction(transaction, [payer]);
+                signatures.push(signature);
+                recoveredTotal += 0.002; // Přibližná částka zálohy za 1 účet
+            }
+        }
+
+        if (signatures.length === 0) {
+            return res.status(200).json({ success: false, error: "Nenalezeny žádné prázdné účty k vysátí." });
+        }
+
+        // 3. ZÁPIS ÚSPĚCHU DO NEONU
         await sql`
             INSERT INTO logs (slot, gap_sol, destination, status, created_at)
-            VALUES (${slot}, 'JUPITER_SWAP', ${signature}, 'EXECUTED', NOW())
+            VALUES (0, 'RENT_RECOVERY', ${signatures[0]}, 'SUCCESS', NOW())
         `;
 
         return res.status(200).json({
             success: true,
-            status: "OBCHOD PROVEDEN",
-            signature: signature,
-            outAmount: quoteResponse.outAmount
+            status: "RENT VYSÁT",
+            recovered_sol: recoveredTotal,
+            count: signatures.length,
+            signature: signatures[0]
         });
 
     } catch (err) {
         console.error(err);
         return res.status(200).json({ 
             success: false, 
-            status: "CHYBA OBCHODU", 
+            status: "CHYBA SYSTÉMU", 
             error: err.message 
         });
     }
