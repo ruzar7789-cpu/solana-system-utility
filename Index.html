@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUTONOMNÍ KLÍČ v4.0</title>
+    <style>
+        body { background: #000; color: #0dff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #console { flex-grow: 1; border: 1px solid #0dff00; padding: 15px; overflow-y: auto; background: rgba(0, 20, 0, 0.9); box-shadow: inset 0 0 10px #0dff00; font-size: 0.85em; margin-bottom: 15px; }
+        .btn-core { width: 100%; padding: 20px; background: #0dff00; color: #000; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
+        .line { margin-bottom: 4px; border-left: 2px solid #0dff00; padding-left: 8px; }
+        .highlight { color: #fff; text-shadow: 0 0 5px #0dff00; }
+    </style>
+</head>
+<body>
+    <div id="console">
+        <div class="line">[SYSTEM] HEURISTICKÉ JÁDRO INICIALIZOVÁNO...</div>
+        <div class="line">[READY] ČEKÁM NA BLUETOOTH SPOJENÍ...</div>
+    </div>
+    <button id="mainAction" class="btn-core">Spustit Autonomní Analýzu</button>
+
+    <script>
+        const terminal = document.getElementById('console');
+        const log = (msg, high = false) => {
+            const div = document.createElement('div');
+            div.className = 'line' + (high ? ' highlight' : '');
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        };
+
+        const targetServiceUuid = '0000180a-0000-1000-8000-00805f9b34fb';
+        const targetCharUuid = '00002a29-0000-1000-8000-00805f9b34fb';
+
+        async function startHeuristicEngine() {
+            try {
+                log("Hledám cíl v okolí...", true);
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'CZ-' }],
+                    optionalServices: [targetServiceUuid]
+                });
+
+                log(`Zařízení nalezeno: ${device.name}`);
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(targetServiceUuid);
+                const char = await service.getCharacteristic(targetCharUuid);
+                
+                log("Analýza protokolu spuštěna...", true);
+
+                // --- HEURISTICKÁ LOGIKA ---
+                // Fáze 1: Fingerprinting (Zjištění typu zabezpečení)
+                await char.writeValue(new Uint8Array([0x00])); 
+                log("Skenuji odezvu šifrovací vrstvy...");
+
+                // Fáze 2: Adaptivní sekvence
+                const attackVectors = [
+                    { name: "Auth Bypass", data: [0x01, 0x01, 0x01] },
+                    { name: "Buffer Overflow Simulation", data: [0x00, 0xff, 0x00, 0xff, 0x00, 0xff] },
+                    { name: "Logic Reset", data: [0x4f, 0x50, 0x45, 0x4e] }, // ASCII OPEN
+                    { name: "Master Key Injection", data: [0x06, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01] }
+                ];
+
+                for (const vector of attackVectors) {
+                    log(`Aplikuji vektor: ${vector.name}...`);
+                    await char.writeValue(new Uint8Array(vector.data));
+                    
+                    // Simulace "naslouchání" odpovědi
+                    const response = await char.readValue().catch(() => null);
+                    if (response) {
+                        const val = new Uint8Array(response.buffer);
+                        log(`Detekována odpověď: ${Array.from(val).map(b => b.toString(16)).join(' ')}`);
+                        // Zde by systém mohl upravit další krok, pokud by detekoval úspěch
+                    }
+                    await new Promise(r => setTimeout(r, 800));
+                }
+
+                log("ANALÝZA DOKONČENA. Pokud se zámek neotevřel, uzel vyžaduje synchronizovaný Token.", true);
+
+            } catch (err) {
+                log(`KRITICKÁ CHYBA: ${err.message}`);
+            }
+        }
+
+        document.getElementById('mainAction').addEventListener('click', startHeuristicEngine);
+    </script>
+</body>
+</html>
